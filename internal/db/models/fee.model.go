@@ -15,5 +15,5 @@ type FeeModel struct {
 }
 
 func (*FeeModel) TableName() string {
-	return "platform_fee"
+	return "platform_fees"
 }
