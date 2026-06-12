@@ -31,11 +31,23 @@ func (r *WalletRepository) GetByID(ctx context.Context, id uint) (*entities.Wall
 
 }
 
+func (r *WalletRepository) GetByIDForUpdate(ctx context.Context, id uint) (*entities.Wallet, error) {
+	var wallet models.WalletModel
+	err := DBFromCtx(ctx, r.db).
+		Set("gorm:query_option", "FOR UPDATE").
+		Where("id = ?", id).
+		First(&wallet).Error
+	if err != nil {
+		return nil, err
+	}
+	return wallet.ToDomain(), err
+}
+
 func (r *WalletRepository) Update(ctx context.Context) {
 
 }
 
-func (r *WalletRepository) UpdateBalance(ctx context.Context, walletId, newBalance int) (*entities.Wallet, error) {
+func (r *WalletRepository) UpdateBalance(ctx context.Context, walletId, newBalance uint) (*entities.Wallet, error) {
 	var wallet models.WalletModel
 
 	err := DBFromCtx(ctx, r.db).Where("id = ?", walletId).Update("balance", newBalance).Error

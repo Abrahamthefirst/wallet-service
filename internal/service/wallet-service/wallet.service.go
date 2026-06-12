@@ -21,40 +21,44 @@ func NewWalletService(tx repository.Transactor, walletRepository *repository.Wal
 	return &WalletService{tx: tx, walletRepository: walletRepository}
 }
 
-func (s *WalletService) TransferBetweenUsers(ctx context.Context, senderId uint, input dtos.TransferBetweenUsersRequestBody) (*entities.Transaction, error) {
+func (s *WalletService) TransferBetweenUsers(ctx context.Context, senderId uint, input dtos.TransferBetweenUsersRequestBody) (*dtos.Peer2PeerTransferServiceSuccess, error) {
 
 	if input.Amount <= 0 {
 		return nil, fmt.Errorf("Amount must be positive")
 	}
 
-	if input.SenderWalletId == input.ReceiverWalletId {
-		return nil, fmt.Errorf("Transfers could only be done between different wallets")
+	if input.SenderWalletID == input.ReceiverWalletID {
+		return nil, fmt.Errorf("transfers must be between different wallets")
 	}
 
-	senderWallet, err := s.walletRepository.GetByID(ctx, input.SenderWalletId)
+	var senderBalance uint
+	err := s.tx.WithTx(ctx, func(ctx context.Context) error {
 
-	if err != nil {
-		return nil, fmt.Errorf("Sender Wallet not found")
-	}
+		senderWallet, err := s.walletRepository.GetByIDForUpdate(ctx, input.SenderWalletID)
 
-	receiverWallet, err := s.walletRepository.GetByID(ctx, input.ReceiverWalletId)
+		if err != nil {
+			// s.logger.Error("TransferBetweenUsers failed",
+			// 	"senderId", input.SenderWalletId,
+			// 	"receiverId", input.ReceiverWalletId,
+			// 	"amount", input.Amount,
+			// 	"error", err,
+			// )
+			return fmt.Errorf("Sender Wallet not found")
+		}
 
-	if err != nil {
-		return nil, fmt.Errorf("Receiver Wallet not found")
-	}
+		receiverWallet, err := s.walletRepository.GetByIDForUpdate(ctx, input.ReceiverWalletID)
 
-	if senderWallet.Currency != receiverWallet.Currency {
-		return nil, fmt.Errorf("currency_mismatch: wallet currency is %s, request currency is %s", senderWallet.Currency, receiverWallet.Currency)
-	}
-	// I would come back and handle the fee
-	// Another question to ask is that would it be okay to throw http errors at the service layer
-	if senderWallet.Balance < input.Amount {
-		return nil, fmt.Errorf("Insufficient funds")
-	}
+		if err != nil {
+			return fmt.Errorf("Receiver Wallet not found")
+		}
 
-	s.tx.WithTx(ctx, func(ctx context.Context) error {
+		if senderWallet.Currency != receiverWallet.Currency {
+			return fmt.Errorf("currency_mismatch: wallet currency is %s, request currency is %s", senderWallet.Currency, receiverWallet.Currency)
+		}
 
-		// Create a transaction
+		if senderWallet.Balance < input.Amount {
+			return fmt.Errorf("Insufficient funds")
+		}
 
 		inputTransaction := entities.Transaction{
 			Amount:         input.Amount,
@@ -72,7 +76,7 @@ func (s *WalletService) TransferBetweenUsers(ctx context.Context, senderId uint,
 
 		inputCreditLedger := entities.Ledger{
 			TransactionID: transaction.ID,
-			AccountID:     input.ReceiverWalletId,
+			AccountID:     input.ReceiverWalletID,
 			EntryType:     enums.EntryTypeCredit,
 			Amount:        input.Amount,
 			Currency:      input.Currency,
@@ -87,7 +91,7 @@ func (s *WalletService) TransferBetweenUsers(ctx context.Context, senderId uint,
 
 		inputDebitLedger := entities.Ledger{
 			TransactionID: transaction.ID,
-			AccountID:     input.SenderWalletId,
+			AccountID:     input.SenderWalletID,
 			EntryType:     enums.EntryTypeDebit,
 			Amount:        input.Amount,
 			Currency:      input.Currency,
@@ -100,9 +104,28 @@ func (s *WalletService) TransferBetweenUsers(ctx context.Context, senderId uint,
 			return err
 		}
 
+		senderBalance = senderWallet.Balance - input.Amount
+		_, err = s.walletRepository.UpdateBalance(ctx, input.SenderWalletID, senderBalance)
+
+		if err != nil {
+			return err
+		}
+
+		_, err = s.walletRepository.UpdateBalance(ctx, input.ReceiverWalletID, receiverWallet.Balance+input.Amount)
+
+		if err != nil {
+			return err
+		}
+
+		
 		return nil
 	})
 
+	if err != nil {
+		return nil, err
+	}
 
-	
+	// I could probably build a notification service
+	return &dtos.Peer2PeerTransferServiceSuccess{ReceiverWalletID: input.ReceiverWalletID, Description: input.Description, SenderBalance: senderBalance, EntryType: enums.EntryTypeDebit}, nil
+
 }
