@@ -7,13 +7,15 @@ import (
 )
 
 type Transaction struct {
-	ID              uint `json:"id"`
-	WalletId        uint
-	Amount          uint
-	Currency        enums.Currency
-	FinalBalance    uint
-	Desscription    string
-	TransactionType string
+	ID             uint `json:"id"`
+	WalletId       uint
+	Amount         uint
+	Currency       enums.Currency
+	FinalBalance   uint
+	OperationType  enums.OperationType
+	Description    string
+	Fee            *Fee
+	IdempotencyKey string
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

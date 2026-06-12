@@ -30,6 +30,7 @@ func (m *UserModel) ToDomain() *entities.User {
 		Username:        m.Username,
 		AvatarKey:       *m.AvatarKey,
 		Password:        m.Password,
+		
 		EmailVerifiedAt: m.EmailVerifiedAt,
 		CreatedAt:       m.CreatedAt,
 	}

@@ -45,8 +45,8 @@ func (m *WalletModel) ToDomain() *entities.Wallet {
 				Amount:          item.Amount,
 				Currency:        item.Currency,
 				FinalBalance:    item.FinalBalance,
-				Desscription:    item.Desscription,
-				TransactionType: item.TransactionType,
+				Description:    item.Description,
+				OperationType: item.OperationType,
 				CreatedAt:       item.CreatedAt,
 			}
 

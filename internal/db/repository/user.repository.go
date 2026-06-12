@@ -18,14 +18,14 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 
 func (r *UserRepository) GetByID(ctx context.Context, id uint) (*entities.User, error) {
 	var user models.UserModel
-	err := DBFromCtx(ctx, r.db).Where("id = ?", id).First(&user).Error
+	err := DBFromCtx(ctx, r.db).Preload("Wallets").Where("id = ?", id).First(&user).Error
 
 	if err != nil {
 		return nil, err
 	}
 	return user.ToDomain(), err
-
 }
+
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*entities.User, error) {
 	var user models.UserModel

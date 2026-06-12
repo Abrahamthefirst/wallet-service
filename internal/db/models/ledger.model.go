@@ -1,13 +1,16 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"github.com/Abrahamthefirst/finecore-practice/internal/enums"
+	"gorm.io/gorm"
+)
 
 type LedgerEntryModel struct {
 	gorm.Model `gorm:"uniqueIndex"`
 	TransactionId uint
 	WalletId uint
 	UserId uint
-	EntryType string
+	EntryType enums.EntryType
 	Amount uint
 	Currency string
 	Description string

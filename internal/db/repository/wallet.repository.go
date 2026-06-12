@@ -78,3 +78,20 @@ func (r *WalletRepository) GetAll(ctx context.Context) (*[]entities.Wallet, erro
 
 	return &walletsList, nil
 }
+
+func (r *WalletRepository) FetchByUserID(ctx context.Context, userID uint) (*[]entities.Wallet, error) {
+	var wallets []models.WalletModel
+
+	// We are querying the wallets table directly
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).Find(&wallets).Error
+	if err != nil {
+		return nil, err
+	}
+
+	walletsList := []entities.Wallet{}
+
+	for _, wallet := range wallets {
+		walletsList = append(walletsList, *wallet.ToDomain())
+	}
+	return &walletsList, nil
+}

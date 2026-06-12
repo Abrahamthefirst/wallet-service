@@ -3,7 +3,8 @@ package dtos
 import "github.com/Abrahamthefirst/finecore-practice/internal/enums"
 
 type TransferBetweenUsersRequestBody struct {
-	ReceiverId uint
+	ReceiverWalletId uint
+	SenderWalletId uint
 	Amount     uint
 	Currency   enums.Currency
 }
