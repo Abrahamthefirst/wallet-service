@@ -1,77 +1,90 @@
 package authservice
 
-type AuthService struct{}
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"time"
 
-func NewAuthService() *AuthService {
-	return &AuthService{}
+	"github.com/Abrahamthefirst/finecore-practice/internal/db/repository"
+	"github.com/Abrahamthefirst/finecore-practice/internal/dtos"
+	"github.com/Abrahamthefirst/finecore-practice/internal/entities"
+	custom_http "github.com/Abrahamthefirst/finecore-practice/internal/http/webutil"
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
+)
+
+type AuthService struct {
+	userRepository *repository.UserRepository
 }
 
-// func (s *AuthService) SignUp(dto dtos.SignupRequestDto, baseURL string) (*entities.User, error) {
-// 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
+func NewAuthService(userRepository *repository.UserRepository) *AuthService {
+	return &AuthService{
+		userRepository: userRepository,
+	}
+}
 
-// 	user := entities.User{
-// 		Email:    dto.Email,
-// 		Password: string(hashedPassword),
-// 		Username: dto.Username,
-// 	}
+func (s *AuthService) SignUp(ctx context.Context, dto dtos.SignupRequestDto) (*entities.User, error) {
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
 
-// 	newUser, err := s.repo.Create(user)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("%w: user with email %s already exists", entities.ErrConflict, dto.Email)
-// 	}
+	user := &entities.User{
+		Email:    dto.Email,
+		Password: string(hashedPassword),
+		Username: dto.Username,
+	}
 
-// 	go func() {
-// 		if err := s.VerifyEmail(context.Background(), newUser.Email, baseURL); err != nil {
-// 			fmt.Println("Verification email error:", err)
-// 		}
-// 	}()
+	newUser, err := s.userRepository.Create(ctx, user)
+	if err != nil {
+		return nil, fmt.Errorf("%w: user with email %s already exists", custom_http.ErrConflict, dto.Email)
+	}
 
-// 	return newUser, nil
-// }
+	return newUser, nil
+}
 
-// func (a *AuthService) Login(ctx context.Context, dto dtos.LoginRequestDto) (*dtos.LoginServiceOkResponse, error) {
-// 	user, err := a.repo.FindByEmail(ctx, dto.Email)
+func (a *AuthService) Login(ctx context.Context, dto dtos.LoginRequestDto) (*dtos.LoginServiceOkResponse, error) {
+	user, err := a.userRepository.FindByEmail(ctx, dto.Email)
 
-// 	if err != nil {
-// 		if errors.Is(err, entities.RecordNotFound) {
-// 			return nil, entities.ErrInvalidCredentials
+	if err != nil {
+		if errors.Is(err, custom_http.RecordNotFound) {
+			return nil, custom_http.ErrInvalidCredentials
 
-// 		}
-// 		return nil, err
-// 	}
+		}
+		return nil, err
+	}
 
-// 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(dto.Password)); err != nil {
-// 		return nil, entities.ErrInvalidCredentials
-// 	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(dto.Password)); err != nil {
+		return nil, custom_http.ErrInvalidCredentials
+	}
 
-// 	atClaims := entities.TokenClaims{
-// 		UserID: uint(user.ID),
-// 		RegisteredClaims: jwt.RegisteredClaims{
-// 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
-// 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-// 			Issuer:    "my-auth-server",
-// 		},
-// 	}
+	atClaims := entities.TokenClaims{
+		UserID: uint(user.ID),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "my-auth-server",
+		},
+	}
 
-// 	rtClaims := entities.TokenClaims{
-// 		UserID: uint(user.ID),
-// 		RegisteredClaims: jwt.RegisteredClaims{
-// 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
-// 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-// 			Issuer:    "my-auth-server",
-// 		},
-// 	}
+	rtClaims := entities.TokenClaims{
+		UserID: uint(user.ID),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "my-auth-server",
+		},
+	}
 
-// 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-// 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
 
-// 	accessTokenString, err := accessToken.SignedString([]byte(os.Getenv("ACCESS_TOKEN_SECRET")))
-// 	refreshTokenString, err := refreshToken.SignedString([]byte(os.Getenv("REFRESH_TOKEN_SECRET")))
+	accessTokenString, err := accessToken.SignedString([]byte(os.Getenv("ACCESS_TOKEN_SECRET")))
+	refreshTokenString, err := refreshToken.SignedString([]byte(os.Getenv("REFRESH_TOKEN_SECRET")))
 
-// 	if err != nil {
-// 		return nil, entities.ErrInternal
-// 	}
+	if err != nil {
+		return nil, custom_http.ErrInternal
+	}
 
-// 	return &dtos.LoginServiceOkResponse{User: user, AccessToken: accessTokenString, RefreshToken: refreshTokenString}, nil
+	return &dtos.LoginServiceOkResponse{User: user, AccessToken: accessTokenString, RefreshToken: refreshTokenString}, nil
 
-// }
+}

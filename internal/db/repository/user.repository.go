@@ -16,7 +16,7 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{}
 }
 
-func (r *UserRepository) GetByID(ctx context.Context, id uint) (*entities.User, error) {
+func (r *UserRepository) FindByID(ctx context.Context, id uint) (*entities.User, error) {
 	var user models.UserModel
 	err := DBFromCtx(ctx, r.db).Preload("Wallets").Where("id = ?", id).First(&user).Error
 
@@ -27,7 +27,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uint) (*entities.User, 
 }
 
 
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*entities.User, error) {
+func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*entities.User, error) {
 	var user models.UserModel
 	err := DBFromCtx(ctx, r.db).Where("email = ?", email).First(&user).Error
 
@@ -37,7 +37,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*entitie
 	return user.ToDomain(), err
 }
 
-func (r *UserRepository) GetAll(ctx context.Context, email string) (*[]entities.User, error) {
+func (r *UserRepository) FindAll(ctx context.Context, email string) (*[]entities.User, error) {
 	var users []models.UserModel
 	err := DBFromCtx(ctx, r.db).Find(&users).Error
 
