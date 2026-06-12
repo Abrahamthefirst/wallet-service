@@ -10,7 +10,7 @@ import (
 type TransactionModel struct {
 	gorm.Model     `gorm:"uniqueIndex"`
 	IdempotencyKey string
-	Amount         uint
+	Amount         uint `gorm:"not null"`
 	Currency       enums.Currency
 	FinalBalance   uint
 	Description    string
@@ -23,13 +23,13 @@ func (*TransactionModel) TableName() string {
 
 func (m *TransactionModel) ToDomain() *entities.Transaction {
 	transaction := &entities.Transaction{
-		ID:              m.ID,
-		Amount:          m.Amount,
-		Currency:        m.Currency,
-		FinalBalance:    m.FinalBalance,
-		OperationType: m.OperationType,
-		IdempotencyKey:  m.IdempotencyKey,
-		Description:     m.Description,
+		ID:             m.ID,
+		Amount:         m.Amount,
+		Currency:       m.Currency,
+		FinalBalance:   m.FinalBalance,
+		OperationType:  m.OperationType,
+		IdempotencyKey: m.IdempotencyKey,
+		Description:    m.Description,
 
 		UpdatedAt: m.UpdatedAt,
 		CreatedAt: m.CreatedAt,

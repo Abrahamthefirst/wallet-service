@@ -5,11 +5,10 @@ import (
 )
 
 type Fee struct {
-	ID            uint `json:"id"`
-	TransactionId uint
-	Amount        uint
-	Percentage    uint
-	Currency      enums.Currency
-	WalletType    enums.WalletType
-	Fee           uint
+	ID            uint             `json:"id"`
+	TransactionId uint             `json:"transaction_id"`
+	Amount        uint             `json:"amount"`
+	Percentage    uint             `json:"percentage"`
+	Currency      enums.Currency   `json:"currency"`
+	WalletType    enums.WalletType `json:"wallet_type"`
 }

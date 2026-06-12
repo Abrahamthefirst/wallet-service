@@ -5,10 +5,10 @@ import (
 )
 
 type TransferBetweenUsersRequestBody struct {
-	ReceiverWalletID uint
-	SenderWalletID   uint
-	IdempotencyKey   string
-	Description      string
-	Amount           uint
-	Currency         enums.Currency
+	ReceiverWalletID uint           `json:"receiver_wallet_id"`
+	SenderWalletID   uint           `json:"sender_wallet_id"`
+	IdempotencyKey   string         `json:"idempotency_key"`
+	Description      string         `json:"description"`
+	Amount           uint           `json:"amount"`
+	Currency         enums.Currency `json:"currency"`
 }
