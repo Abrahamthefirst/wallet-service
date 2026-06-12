@@ -8,7 +8,6 @@ import (
 
 type Transaction struct {
 	ID             uint `json:"id"`
-	WalletId       uint
 	Amount         uint
 	Currency       enums.Currency
 	FinalBalance   uint

@@ -30,7 +30,6 @@ func (r *TransactionRepository) GetByID(ctx context.Context, id uint) (*entities
 
 func (r *TransactionRepository) Create(ctx context.Context, input entities.Transaction) (*entities.Transaction, error) {
 	transaction := models.TransactionModel{
-		WalletId:       input.WalletId,
 		FinalBalance:   input.FinalBalance,
 		Currency:       input.Currency,
 		Description:    input.Description,

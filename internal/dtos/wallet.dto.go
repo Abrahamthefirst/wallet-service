@@ -5,6 +5,8 @@ import "github.com/Abrahamthefirst/finecore-practice/internal/enums"
 type TransferBetweenUsersRequestBody struct {
 	ReceiverWalletId uint
 	SenderWalletId uint
+	IdempotencyKey string
+	Description string
 	Amount     uint
 	Currency   enums.Currency
 }

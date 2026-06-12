@@ -10,7 +10,6 @@ import (
 type TransactionModel struct {
 	gorm.Model     `gorm:"uniqueIndex"`
 	IdempotencyKey string
-	WalletId       uint
 	Amount         uint
 	Currency       enums.Currency
 	FinalBalance   uint
@@ -31,7 +30,6 @@ func (m *TransactionModel) ToDomain() *entities.Transaction {
 		OperationType: m.OperationType,
 		IdempotencyKey:  m.IdempotencyKey,
 		Description:     m.Description,
-		WalletId:        m.WalletId,
 
 		UpdatedAt: m.UpdatedAt,
 		CreatedAt: m.CreatedAt,

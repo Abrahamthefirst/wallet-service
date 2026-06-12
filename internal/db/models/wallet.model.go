@@ -41,7 +41,6 @@ func (m *WalletModel) ToDomain() *entities.Wallet {
 
 			transaction := entities.Transaction{
 				ID:              item.ID,
-				WalletId:        item.WalletId,
 				Amount:          item.Amount,
 				Currency:        item.Currency,
 				FinalBalance:    item.FinalBalance,

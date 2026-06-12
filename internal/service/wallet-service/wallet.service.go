@@ -7,10 +7,12 @@ import (
 	"github.com/Abrahamthefirst/finecore-practice/internal/db/repository"
 	"github.com/Abrahamthefirst/finecore-practice/internal/dtos"
 	"github.com/Abrahamthefirst/finecore-practice/internal/entities"
+	"github.com/Abrahamthefirst/finecore-practice/internal/enums"
 )
 
 type WalletService struct {
 	tx                    repository.Transactor
+	ledgerRepository      repository.LedgerRepository
 	transactionRepository *repository.TransactionRepository
 	walletRepository      *repository.WalletRepository
 }
@@ -44,14 +46,63 @@ func (s *WalletService) TransferBetweenUsers(ctx context.Context, senderId uint,
 	if senderWallet.Currency != receiverWallet.Currency {
 		return nil, fmt.Errorf("currency_mismatch: wallet currency is %s, request currency is %s", senderWallet.Currency, receiverWallet.Currency)
 	}
+	// I would come back and handle the fee
+	// Another question to ask is that would it be okay to throw http errors at the service layer
+	if senderWallet.Balance < input.Amount {
+		return nil, fmt.Errorf("Insufficient funds")
+	}
 
 	s.tx.WithTx(ctx, func(ctx context.Context) error {
-		// run every transaction here
 
-		
+		// Create a transaction
 
-		s.transactionRepository.Create(ctx, input)
-		return
+		inputTransaction := entities.Transaction{
+			Amount:         input.Amount,
+			OperationType:  enums.OperationTypeTransfer,
+			Currency:       input.Currency,
+			Description:    input.Description,
+			IdempotencyKey: input.IdempotencyKey,
+		}
+
+		transaction, err := s.transactionRepository.Create(ctx, inputTransaction)
+
+		if err != nil {
+			return err
+		}
+
+		inputCreditLedger := entities.Ledger{
+			TransactionID: transaction.ID,
+			AccountID:     input.ReceiverWalletId,
+			EntryType:     enums.EntryTypeCredit,
+			Amount:        input.Amount,
+			Currency:      input.Currency,
+			Description:   input.Description,
+		}
+
+		_, err = s.ledgerRepository.Create(ctx, inputCreditLedger)
+
+		if err != nil {
+			return err
+		}
+
+		inputDebitLedger := entities.Ledger{
+			TransactionID: transaction.ID,
+			AccountID:     input.SenderWalletId,
+			EntryType:     enums.EntryTypeDebit,
+			Amount:        input.Amount,
+			Currency:      input.Currency,
+			Description:   input.Description,
+		}
+
+		_, err = s.ledgerRepository.Create(ctx, inputDebitLedger)
+
+		if err != nil {
+			return err
+		}
+
+		return nil
 	})
 
+
+	
 }
