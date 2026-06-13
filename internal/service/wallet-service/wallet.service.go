@@ -21,6 +21,16 @@ func NewWalletService(tx repository.Transactor, walletRepository *repository.Wal
 	return &WalletService{tx: tx, walletRepository: walletRepository}
 }
 
+func (s *WalletService) CreateWallet(ctx context.Context, userId uint, input *dtos.CreateWalletRequestBody) (*entities.Wallet, error) {
+
+	wallet, err := s.walletRepository.Create(ctx, userId, entities.Wallet{Currency: enums.CurrencyNGN, Balance: input.Balance, WalletType: input.WalletType})
+
+	if err != nil {
+		return nil, err
+	}
+	return wallet, nil
+}
+
 func (s *WalletService) TransferBetweenUsers(ctx context.Context, senderId uint, input dtos.TransferBetweenUsersRequestBody) (*dtos.Peer2PeerTransferServiceSuccess, error) {
 
 	if input.Amount <= 0 {
@@ -74,31 +84,24 @@ func (s *WalletService) TransferBetweenUsers(ctx context.Context, senderId uint,
 			return err
 		}
 
-		inputCreditLedger := entities.Ledger{
-			TransactionID: transaction.ID,
-			AccountID:     input.ReceiverWalletID,
-			EntryType:     enums.EntryTypeCredit,
-			Amount:        input.Amount,
-			Currency:      input.Currency,
-			Description:   input.Description,
-		}
-
-		_, err = s.ledgerRepository.Create(ctx, inputCreditLedger)
-
-		if err != nil {
-			return err
-		}
-
-		inputDebitLedger := entities.Ledger{
-			TransactionID: transaction.ID,
-			AccountID:     input.SenderWalletID,
-			EntryType:     enums.EntryTypeDebit,
-			Amount:        input.Amount,
-			Currency:      input.Currency,
-			Description:   input.Description,
-		}
-
-		_, err = s.ledgerRepository.Create(ctx, inputDebitLedger)
+		_, err = s.ledgerRepository.CreateInBatch(ctx, []entities.Ledger{
+			{
+				TransactionID: transaction.ID,
+				AccountID:     input.ReceiverWalletID,
+				EntryType:     enums.EntryTypeCredit,
+				Amount:        input.Amount,
+				Currency:      input.Currency,
+				Description:   input.Description,
+			},
+			{
+				TransactionID: transaction.ID,
+				AccountID:     input.SenderWalletID,
+				EntryType:     enums.EntryTypeDebit,
+				Amount:        input.Amount,
+				Currency:      input.Currency,
+				Description:   input.Description,
+			},
+		})
 
 		if err != nil {
 			return err
@@ -117,7 +120,6 @@ func (s *WalletService) TransferBetweenUsers(ctx context.Context, senderId uint,
 			return err
 		}
 
-		
 		return nil
 	})
 

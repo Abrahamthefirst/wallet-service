@@ -3,7 +3,7 @@ package models
 import "gorm.io/gorm"
 
 type SystemAccountModel struct {
-	gorm.Model `gorm:"uniqueIndex"`
+	gorm.Model 
 
 }
 

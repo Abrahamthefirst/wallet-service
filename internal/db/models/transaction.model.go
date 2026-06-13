@@ -12,7 +12,8 @@ type TransactionModel struct {
 	IdempotencyKey string
 	Amount         uint `gorm:"not null"`
 	Currency       enums.Currency
-	FinalBalance   uint
+	WalletId       uint 
+	FinalBalance   uint `gorm:"not null"`
 	Description    string
 	OperationType  enums.OperationType
 }

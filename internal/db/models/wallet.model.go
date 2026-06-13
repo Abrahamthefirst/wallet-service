@@ -7,12 +7,12 @@ import (
 )
 
 type WalletModel struct {
-	gorm.Model   `gorm:"uniqueIndex"`
-	UserId       uint
-	Balance      uint
-	Currency     enums.Currency
-	WalletType   enums.WalletType
-	transactions []TransactionModel
+	gorm.Model
+	OwnerId      uint               `gorm:"not null;index"`
+	Balance      uint               `gorm:"not null;default:0"`
+	Currency     enums.Currency     `gorm:"not null"`
+	WalletType   enums.WalletType   `gorm:"not null"`
+	Transactions []TransactionModel `gorm:"foreignKey:WalletId"`
 }
 
 func (*WalletModel) TableName() string {
@@ -23,7 +23,7 @@ func (m *WalletModel) ToDomain() *entities.Wallet {
 	wallet := &entities.Wallet{
 		ID:         m.ID,
 		Balance:    m.Balance,
-		UserId:     m.UserId,
+		UserId:     m.OwnerId,
 		Currency:   m.Currency,
 		WalletType: m.WalletType,
 		UpdatedAt:  m.UpdatedAt,
@@ -35,18 +35,18 @@ func (m *WalletModel) ToDomain() *entities.Wallet {
 	}
 
 	iterationStep := 0
-	if len(m.transactions) > 0 {
+	if len(m.Transactions) > 0 {
 
-		for _, item := range m.transactions {
+		for _, item := range m.Transactions {
 
 			transaction := entities.Transaction{
-				ID:              item.ID,
-				Amount:          item.Amount,
-				Currency:        item.Currency,
-				FinalBalance:    item.FinalBalance,
-				Description:    item.Description,
+				ID:            item.ID,
+				Amount:        item.Amount,
+				Currency:      item.Currency,
+				FinalBalance:  item.FinalBalance,
+				Description:   item.Description,
 				OperationType: item.OperationType,
-				CreatedAt:       item.CreatedAt,
+				CreatedAt:     item.CreatedAt,
 			}
 
 			*wallet.Transactions = append(*wallet.Transactions, transaction)

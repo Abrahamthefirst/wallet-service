@@ -61,7 +61,7 @@ func (r *WalletRepository) UpdateBalance(ctx context.Context, walletId, newBalan
 
 func (r *WalletRepository) Create(ctx context.Context, userId uint, input entities.Wallet) (*entities.Wallet, error) {
 	wallet := models.WalletModel{
-		UserId:     input.UserId,
+		OwnerId:     userId,
 		Balance:    input.Balance,
 		Currency:   input.Currency,
 		WalletType: input.WalletType,

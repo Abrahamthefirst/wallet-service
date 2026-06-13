@@ -19,7 +19,6 @@ func NewPgDB(dsn string) *gorm.DB {
 	err = db.AutoMigrate(
 		&models.DisbursmentModel{},
 		&models.FeeModel{},
-		&models.FloatModel{},
 		&models.LedgerEntryModel{},
 		&models.SystemAccountModel{},
 		&models.TransactionModel{},

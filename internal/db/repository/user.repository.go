@@ -13,7 +13,9 @@ type UserRepository struct {
 }
 
 func NewUserRepository(db *gorm.DB) *UserRepository {
-	return &UserRepository{}
+	return &UserRepository{
+		db: db,
+	}
 }
 
 func (r *UserRepository) FindByID(ctx context.Context, id uint) (*entities.User, error) {
@@ -25,7 +27,6 @@ func (r *UserRepository) FindByID(ctx context.Context, id uint) (*entities.User,
 	}
 	return user.ToDomain(), err
 }
-
 
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*entities.User, error) {
 	var user models.UserModel
@@ -56,7 +57,7 @@ func (r *UserRepository) FindAll(ctx context.Context, email string) (*[]entities
 
 func (r *UserRepository) Create(ctx context.Context, input *entities.User) (*entities.User, error) {
 
-	user := models.UserModel{FirstName: &input.Firstname, LastName: &input.LastName, Username: input.Username, Email: input.Email, Password: input.Password, AvatarKey: &input.AvatarKey}
+	user := models.UserModel{FirstName: input.Firstname, LastName: input.LastName, Username: input.Username, Email: input.Email, Password: input.Password, AvatarKey: input.AvatarKey}
 
 	err := DBFromCtx(ctx, r.db).Create(&user).Error
 

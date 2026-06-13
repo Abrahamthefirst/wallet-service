@@ -3,8 +3,13 @@ package enums
 type WalletType string
 
 const (
-	UserWallet     WalletType = "user_wallet"
-	MerchantWallet WalletType = "merchant_wallet"
+	WalletTypePersonal   WalletType = "personal"
+	WalletTypeBusiness   WalletType = "business"
+	WalletTypeSavings    WalletType = "savings"
+	WalletTypeFloat      WalletType = "float"
+	WalletTypeSettlement WalletType = "settlement"
+	WalletTypeFee        WalletType = "fee"
+	WalletTypeSuspense   WalletType = "suspense"
 )
 
 func (w WalletType) String() string {

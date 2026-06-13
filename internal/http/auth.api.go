@@ -52,6 +52,7 @@ func (a *AuthController) Login(c *gin.Context) {
 
 	if err := custom_http.ValidateRequest(c, &requestDto); err != nil {
 		return
+
 	}
 
 	result, err := a.authService.Login(c.Request.Context(), requestDto)
@@ -73,9 +74,10 @@ func (a *AuthController) Login(c *gin.Context) {
 
 }
 
-func RegisterAuthorRoutes(r *gin.Engine, authController *AuthController) {
+func RegisterAuthRoutes(r *gin.RouterGroup, authController *AuthController) {
 	auth := r.Group("/auth")
 	{
-		auth.POST("", authController.Signup)
+		auth.POST("/sign-up", authController.Signup)
+		auth.POST("/login", authController.Login)
 	}
 }

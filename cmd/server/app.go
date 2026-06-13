@@ -11,7 +11,11 @@ import (
 	"time"
 
 	"github.com/Abrahamthefirst/finecore-practice/internal/config"
+	"github.com/Abrahamthefirst/finecore-practice/internal/db/repository"
+	endpoints "github.com/Abrahamthefirst/finecore-practice/internal/http"
 	"github.com/Abrahamthefirst/finecore-practice/internal/http/middleware"
+	authservice "github.com/Abrahamthefirst/finecore-practice/internal/service/auth-service"
+	walletservice "github.com/Abrahamthefirst/finecore-practice/internal/service/wallet-service"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/swaggo/swag"
@@ -79,26 +83,43 @@ func (a *application) startServer() {
     `))
 	})
 
-	a.router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:5173",
-			"https://adams-talk-illinois-amd.trycloudflare.com",
-			"https://book-app-cyan.vercel.app",
-			"https://ema-troublesome-bodhi.ngrok-free.dev",
-		},
-		AllowMethods:     []string{"POST", "GET", "OPTIONS", "PUT", "DELETE", "PATCH"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Idempotency-Key", "ngrok-skip-browser-warning"},
-		ExposeHeaders:    []string{"Content-Length", "Set-Cookie"},
-		AllowCredentials: true,
-		MaxAge:           48 * time.Hour,
-	}))
+	a.router.Group("api/v1")
 
-	// transactor := db.NewGormTransactor(a.db)
-	// WalletRepository := repository.NewWalletRepository(a.db)
+	v1 := a.router.Group("/api/v1")
 
-	// walletService := walletservice.NewWalletService(transactor, WalletRepository)
 
-	a.router.Use(middleware.AuthMiddleware())
+
+	v1.Use(cors.New(cors.Config{
+        AllowOrigins: []string{
+            "http://localhost:5173",
+            "http://localhost:4000",
+            "https://book-app-cyan.vercel.app",
+        },
+        AllowMethods:     []string{"POST", "GET", "OPTIONS", "PUT", "DELETE", "PATCH"},
+        AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Idempotency-Key", "ngrok-skip-browser-warning"},
+        ExposeHeaders:    []string{"Content-Length", "Set-Cookie"},
+        AllowCredentials: true,
+        MaxAge:           48 * time.Hour,
+    }))
+
+	transactor := repository.NewGormTransactor(a.db)
+
+	// Repositories bootstrapping
+	walletRepository := repository.NewWalletRepository(a.db)
+	userRepository := repository.NewUserRepository(a.db)
+
+	// Service bootstrapping
+	authService := authservice.NewAuthService(userRepository)
+	walletService := walletservice.NewWalletService(transactor, walletRepository)
+
+	// Controllers initialization
+	authController := endpoints.NewAuthController(authService)
+	walletController := endpoints.NewWalletController(walletService)
+
+	endpoints.RegisterAuthRoutes(v1, authController)
+	endpoints.RegisterWalletRoutes(v1, walletController)
+
+	v1.Use(middleware.AuthMiddleware())
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
